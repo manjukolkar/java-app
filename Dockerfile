@@ -1,4 +1,4 @@
-# Use the official Tomcat base image
+# Use the official Tomcat base image  
 FROM tomcat:latest
 
 # Copy the WAR file into the Tomcat webapps directory
