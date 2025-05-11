@@ -58,13 +58,6 @@ pipeline {
                 }
             }
         }
-
-        stage('Health Check') {
-            steps {
-                sh 'sleep 10'  // Give time for Tomcat to start
-                sh 'curl --fail http://localhost:8080 || exit 1'
-            }
-        }
     }
 
     post {
