@@ -2,14 +2,15 @@ pipeline {
     agent any
 
     tools {
-        maven 'maven'      // Make sure 'maven' is configured under Global Tool Configuration
-        jdk 'java-11'      // Make sure 'java-11' is configured under Global Tool Configuration
+        maven 'maven'       // Ensure this is configured in Global Tool Configuration
+        jdk 'java-11'       // Ensure this is configured in Global Tool Configuration
     }
 
     environment {
         DOCKER_IMAGE = 'manjukolkar007/my-tomcat-webapp'
         DOCKER_REGISTRY = 'docker.io'
-        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'  // Jenkins credentials ID for Docker Hub
+        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
+        IMAGE_TAG = "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:latest"
     }
 
     stages {
@@ -27,7 +28,9 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:latest .'
+                script {
+                    sh "docker build -t ${IMAGE_TAG} ."
+                }
             }
         }
 
@@ -41,21 +44,34 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                sh 'docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:latest'
+                sh "docker push ${IMAGE_TAG}"
             }
         }
 
         stage('Deploy to Tomcat (Dockerized)') {
             steps {
-                sh '''
-                    docker rm -f tomcat-webapp || true
-                    docker run -d --name tomcat-webapp -p 8080:8080 ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:latest
-                '''
+                script {
+                    sh '''
+                        docker rm -f tomcat-webapp || true
+                        docker run -d --name tomcat-webapp -p 8080:8080 ${IMAGE_TAG}
+                    '''
+                }
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                sh 'sleep 10'  // Give time for Tomcat to start
+                sh 'curl --fail http://localhost:8080 || exit 1'
             }
         }
     }
 
     post {
+        always {
+            echo 'Cleaning up unused Docker resources...'
+            sh 'docker system prune -f || true'
+        }
         success {
             echo '✅ Build and deployment succeeded!'
         }
