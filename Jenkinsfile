@@ -52,8 +52,8 @@ pipeline {
             steps {
                 script {
                     sh '''
-                        // docker rm -f tomcat-webapp || true
-                        docker run -it -d --name c1 -p 9000:8080 ${IMAGE_TAG}
+                        docker rm -f c1 || true
+                        docker run -it -d --name c1 -p 9001:8080 ${IMAGE_TAG}
                     '''
                 }
             }
